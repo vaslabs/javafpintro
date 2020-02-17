@@ -13,6 +13,10 @@
         font-family: 'Yanone Kaffeesatz';
         font-weight: normal;
       }
+      img {
+          width: 100%;
+          height: 100%
+      }
       .remark-code, .remark-inline-code { font-family: 'Ubuntu Mono'; }
     </style>
   </head>
@@ -21,20 +25,639 @@
 
 class: center, middle
 
-# Title
+# Introduction to Functional Programming with Java
 
 ---
 
-# Agenda
+# Motivation
 
-1. Introduction
-2. Deep-dive
-3. ...
+## Unfamiliar language:
+
+1. Purity
+2. No side effects (how can anyone do anything?)
+3. Composition
+4. Different from OOP
+5. Monads!!!
+
+
+![mind_blown](https://user-images.githubusercontent.com/3875429/74665979-9252cc00-5198-11ea-8a36-88e471899d32.jpeg)
+![scared](https://user-images.githubusercontent.com/3875429/74665550-dbeee700-5197-11ea-8426-1cc1bfb9b876.jpeg)
+
+???
+When someone is introduced to functional programming from a different paradigm things sound weird, complex or plain impossible.
+
+All these sound very far away from a programmer that has experience with OOP, AOP, procedural programming and so on. Just like we name patterns in OOP , FP has its own names. The difference lies in the fact that FP relies mainly on a branch of mathematics (called category theory) to derive such patterns.
+
+How can you have no side effects and yet make your program do something? What do you mean by purity, that either sounds good or really bad? Different from OOP so no objects? What the heck are monads?
+
+=> It seems that there is a communication barrier between functional programmers and the rest . This barrier could discourage people from trying out new paradigms (any new paradigm)
+
+I'm going to attempt to demystify FP and hopefully show you that behind this complex language there are some basic fundamentals. Then we can see how we can write better code but first let's define what is better code?
+---
+
+# Motivation: But what is good code?
+All code has disadvantages. A better code is:
+
+- Changing it doesn't cause fear
+- Easy to test
+
+???
+We can almost all agree that all code is bad. In my personal experience and by working with teams, a better code, is a code that you are not afraid to change. 
+And that is mainly because that code is easy to test and such tests are also easy to maintain => tests are also code... The more complex they become the more probable it is that they are incorrect and become irrelevant faster (how many times have you added @Ignore ?).
 
 ---
 
-# Introduction
+# What is FP/What is a function ?
 
+![total_function](https://user-images.githubusercontent.com/3875429/74667770-cf6c8d80-519b-11ea-9a75-c918de8e3c5e.jpg)
+
+???
+
+To define FP we must first define what is a function as we define what an object is in OOP.
+
+1. All the values of the input set that the function accepts needs to map to exactly one output value
+
+2. A function must always return the same output for the same input
+
+3. A function must always return a result
+
+A function is a transformation of something to something else. A function can transform an object into a different object of the same type or different one. It also needs to have certain properties.
+---
+
+# Illegal functions: partial functions
+- `Integer::parseInt`
+
+![no_function_exception](https://user-images.githubusercontent.com/3875429/74458429-970a3e00-4e81-11ea-9215-158c4afaa3e8.jpg)
+
+???
+Integer.parseInt is not a function because it yields no results for strings that cannot be parsed into a number, even worse it throws an exception.
+---
+- The solution is to expand the output set to represent erroneous state but make the function always return a value.
+![fix_exception](https://user-images.githubusercontent.com/3875429/74458428-970a3e00-4e81-11ea-9b44-7e1178729919.jpg)
+
+```java
+public static OptionalInt toInt(String text) {
+    try {
+        return OptionalInt.of(Integer.parseInt(text));
+    } catch (NumberFormatException nfe) {
+        return OptionalInt.empty();
+    }
+}
+```
+---
+# Illegal functions: inconsistent output
+
+Let's say we have a function that adds N days to the current time. Is this a function?
+
+```java
+public static ZonedDateTime addDaysToNow(int days) {
+    return ZonedDateTime.now().plusDays(days);
+}
+ ```
+![inconsistent_function](https://user-images.githubusercontent.com/3875429/74458426-9671a780-4e81-11ea-9840-5e5d483e748b.jpg)
+
+???
+---
+## Fix inconsistency
+
+How do we fix this issue?
+
+```java
+public ZonedDateTime addDaysToNow(int days, ZonedDateTime now) {
+    return now.plusDays(days);
+}
+```
+
+???
+We need to delicate the decision of what now is to someone else. How is this useful? we still need to decide what time now is at some point. True. But functional programming is about pushing the effectful operations at the edge of your program.
+---
+## Comparison
+| Function    | Test   |
+| ------------- |:-------------:| 
+| `public ZonedDateTime addDaysToNow(int days)` | `assert ???` |
+| `public ZonedDateTime addDaysToNow(int days, ZonedDateTime now)`|  `assert a value` |
+
+???
+Imagine if you had the first implementation, how would your test look like?
+
+It's not feasible to equally assert the return value of the first method
+
+So the second one is easier to test, because if you know the value of now, you know how it should be when you add N days. Of course this is a trivial example but this holds for all the date time logic you wish to do in your application.
+
+---
+# Function composition
+
+We wish to get an input from the user which represents the amount of days they wish to add to the current date. 
+
+That means we need to parse a string into an int, add it to the current date and then give the message back to the user.
+
+---
+
+## Model in FP terms
+![funcion_composition](https://user-images.githubusercontent.com/3875429/74458422-95407a80-4e81-11ea-9aa6-2a4934dd1678.jpg)
+
+---
+
+## Code: Value objects
+```java
+final class UserRequest {
+    final String days;
+   final  ZonedDateTime now;
+}
+ 
+final class ValidatedUserInput {
+    final int days;
+    final ZonedDateTime now;
+}
+```
+and the function we wrote before
+```java
+public static OptionalInt toInt(String text) {
+    try {
+        return OptionalInt.of(Integer.parseInt(text));
+    } catch (NumberFormatException nfe) {
+        return OptionalInt.empty();
+    }
+}
+```
+---
+
+## Code: Function composition
+```java
+public Optional<ValidatedUserInput> parseInput(UserRequest userRequest) {
+    OptionalInt days = toInt(userRequest.days);
+    if (days.isPresent()) {
+        return Optional.of(
+            new ValidatedUserInput(days.getAsInt(), userRequest.now)
+        );
+    } else {
+        return Optional.empty();
+    }
+}
+public Optional<ZonedDateTime> optionallyAddDaysToNow(
+                Optional<ValidatedUserInput> validatedUserInputOpt) {
+    if (validatedUserInputOpt.isPresent()) {
+        ValidatedUserInput validatedUserInput = validatedUserInputOpt.get();
+        return Optional.of(addDaysToNow(
+            validatedUserInput.days, validatedUserInput.now)
+        );
+    } else {
+        return Optional.empty();
+    }
+}
+public Optional<ZonedDateTime> serveUser(UserRequest userRequest) {
+    Function<UserRequest, Optional<ValidatedUserInput>> parseInput = 
+        this::parseInput;
+    Function<UserRequest, Optional<ZonedDateTime>> serveFunction = 
+        parseInput.andThen(this::optionallyAddDaysToNow);
+    return serveFunction.apply(userRequest);
+}
+```
+
+---
+
+## Function composition so far
+Is this how we compose functions? The code looks very verbose and the if else is not very different from a try catch.
+
+But let's recap:
+
+1. 👍We have only pure functions so far. 
+2. 💪 We managed to compose 2 functions together with the Java core API.
+3. 🤘All the functions are easy to test by simply crafting a test table of inputs/outputs.
+
+👎Optional is composed through a function which makes the design a bit weird. We have an if statement to handle the optional, what then is the difference with null?
+
+---
+
+## Map values inside objects
+
+1. Suppose we have `B f(A a)`. All is good if for every value of type `A` we can generate a value in `B`.
+2. Otherwise we need to extend our output set, for example our function becomes `Option<B> f(A a)`.
+
+How do we transform a value in an Option?
+
+a. If `Option<A>` is empty then we give an empty `Option<B>`
+
+b. If `Option<A>` and `(1)` is true, then we give an `Option<B>` by applying `B f(A a)`
+
+We can have an interface for this right?
+
+Indeed Java provides in its Optional class a method called `map`. However, not in `OptionalInt`.
+---
+
+## Optional: apply functions.
+
+We use map to apply the function `ZonedDateTime f(VailidateUserInput vui)` 
+to `Optional<ValidateUserInput>`
+```java
+public Optional<ZonedDateTime> serveUser(UserRequest userRequest) {
+    return parseInput(userRequest).map(validatedUserInput ->
+            addDaysToNow(validatedUserInput.days, validatedUserInput.now)
+    );
+}
+```
+
+The code below is not needed anymore
+```java
+public Optional<ZonedDateTime> optionallyAddDaysToNow(
+        Optional<ValidatedUserInput> validatedUserInputOpt) {
+    return validatedUserInputOpt.map(
+            validatedUserInput ->
+                    addDaysToNow(
+                            validatedUserInput.days,
+                            validatedUserInput.now)
+    );
+}
+```
+---
+## What is map?
+
+- The map method is part of an "interface" called Functor . 
+- There are a lot of Boxes similar in behaviour or concept to optional.
+- They have something in common, that you may apply a function to a boxed value if some pre-requisites are met.
+
+The signature of the method is
+
+```java
+public<U> Box<U> map(Function<? super T, ? extends U> mapper)
+```
+What are these? 
+
+`? super T, ? extends U`
+
+---
+
+## Type relationships
+
+- `box.map((T1)t -> (U)u)` ❌
+- `box.map((T)t -> (SuperU)u)` ❌
+- `box.map((SuperT)t 0-> (U)u)` ✅
+- `box.map((T)t -> (U)u)` ✅
+- `box.map((T)t -> (U1)u)` ✅
+
+Where T1 is subclass of T and U1 is sublass of U
+
+- `? super T`: Contravariance
+- `? extends U`: Covariance
+
+---
+
+## Compose Optionals together
+
+Problem:
+
+`long` primitive in `ZonedDateTime` can also run out of range.
+
+- not every combination of `(int, ZonedDateTime)` can yield a result. 
+- `plusDays` can throw a `DateTimeException`
+
+---
+
+### Fix proposal
+
+```java
+public static Optional<ZonedDateTime> addDaysToNow(
+            int days, ZonedDateTime now) 
+{
+    try {
+        return Optional.of(now.plusDays(days));
+    } catch (DateTimeException dte) {
+        return Optional.empty();
+    }
+}
+```
+
+Problem:
+```java
+    parseInput(userRequest).map(validatedUserInput ->
+        addDaysToNow(
+            validatedUserInput.days, 
+            validatedUserInput.now
+        )
+    );
+```
+
+Gives an `Optional<Optional<ZonedDateTime>`
+
+---
+
+## Flatten nested `Optional`
+
+There is another helpful API method in optional that allows us
+to compose optionals together: `flatMap`
+```java
+public Optional<ZonedDateTime> serveUser(UserRequest userRequest) {
+    return parseInput(userRequest).flatMap(
+        validatedUserInput ->
+            addDaysToNow(
+                validatedUserInput.days, 
+                validatedUserInput.now
+            )
+    );
+}
+```
+
+## What is `flatMap`
+
+- `flatMap` is part of another interface called Monad
+- It allows us to call a function that returns the same Box as the one we
+are applying to.
+```java
+public<U> Box<U> flatMap(Function<? super T, Box<U>> mapper)
+```
+???
+flatMap is part of another interface called Monad . A Monad interface also extends Functor . So a Monad has both a map and a flatMap. Whenever you hear "this is a monad" then most of the time you are safe to picture a data structure that has map and flatMap implemented.
+
+Notice that here the super (contravariance) is present, but the extends is missing. So you cannot pass a function that gives anything other than a Box<U>, even if the parametarised type is a subclass of U or superclass. so you can't pass to flatMap a Function<T, Box<U1>> where U1 is a subclass of U.
+
+That kind of relationship between types is called invariance (as opposed to contravariance and covariance).
+
+The map and flatMap of a monad have some important and useful properties.
+
+Why do we have Functors and Monads and what is the difference? They are entities which have different properties.
+---
+
+## Some properties of Monad and Functor
+
+- Functor composes in the sense that 
+`F.map(f).map(g) == F.map(f andThen g)`
+- You can't construct a Functor but you can construct a Monad with a
+`pure` constructor and a constructor that decides the 
+state of the Box based on the value passed.
+
+Some implementations call the latter `apply` or `ap` (a what?).
+
+To understand the difference consider the `Optional::of` (`pure`) and the
+`Optional::ofNullable` (`apply`)
+
+???
+In Java Optional this would be the of method. 
+There is another contract which is another constructor method (sometimes referred to as apply or ap).
+This will not result necessarily in a box with a value. 
+An example is the ofNullable from Optional.
+
+---
+
+## What?
+
+These concepts are no stranger in Java land . Let's see an example.
+
+```java
+/**
+* Returns a new CompletionStage that, when this stage completes
+* normally, is executed with this stage as the argument
+* to the supplied function.
+*
+* See the {@link CompletionStage} documentation for rules
+* covering exceptional completion.
+*
+* @param fn the function returning a new CompletionStage
+* @param <U> the type of the returned CompletionStage's result
+* @return the CompletionStage
+*/
+public <U> CompletionStage<U> thenCompose
+   (Function<? super T, ? extends CompletionStage<U>> fn);
+```
+???
+This is just an interface. And yet in the comments we can read a contract . This contract needs to be implemented by anything that implements a CompletionStage .
+
+The same stands for Monad or Functor. The names are friendlier in java land (e.g. a completion stage) is easier to conceptualise than a Functor or Monad which only exist in a branch of mathematics.
+
+---
+# Asynchronous programming
+
+#### CompletionStage
+- Inspired by Monad
+- All implementations (e.g. CompletableFuture) are (should be) Monads
+
+#### A Monad?
+- `thenCompose` ➡️ `flatMap`
+- `thenApply` ➡️ `map`
+- `CompletableFuture.completedFuture(value)` ➡️ `pure`
+- `CompletableFuture.supplyAsync(() -> result)` or `CompletableFuture.supplyAsync(() -> result, executor)` ➡️ `apply`
+
+???
+Talking about CompletionStage: The interface is inspired from Monads and the `CompletableFuture` implementation is a Monad itself, it's just using different names. `map` is `thenApply` `flatMap` is `thenCompose` pure constructor is `CompletableFuture.completedFuture(value)` apply is `CompletableFuture.supplyAsync(() -> result)` or `CompletableFuture.supplyAsync(() -> result, executor)`
+
+## Asynchronous programming: example
+
+We have an ice cream dispenser machine. These are the things it can recognise
+```java
+class Cone {}  
+class Flavour {}  
+
+class IceCream {  
+    IceCream(Cone cone, Flavour flavour) {}  
+}  
+
+class Payment{}
+
+class PayedIceCream {  
+    PayedIceCream(Payment payment, IceCream iceCream) {}  
+}  
+```
+
+---
+We can express its behaviour by composing CompletionStage instances
+```java
+interface IceCreamMachine {  
+  
+    CompletionStage<Cone> pickCone(); 
+    CompletionStage<Flavour> grabFlavour();  
+    
+    default CompletionStage<IceCream> makeIceCream() {  
+          return pickCone().thenCompose(cone ->  //flatMap
+                grabFlavour()
+                .thenApply( //map
+                    flavour -> new IceCream(cone, flavour)
+                )//thenApply  
+          );//thenCompose  
+     }  
+    
+     CompletionStage<Payment> receivePayment();  
+    
+     default CompletionStage<PayedIceCream> dispenseIceCream() {  
+          return makeIceCream()  
+                    .thenCompose(  
+                        iceCream -> receivePayment().thenApply(  
+                                payment -> 
+                                new PayedIceCream(payment, iceCream)  
+                        )//thenApply
+                    );//thenCompose
+    }  
+    
+  }
+```
+???
+There are 3 unimplemented methods which may describe how we do each task. All of them are modelled as asynchronous computations. From those we can provide 2 default implementations for making an ice cream and dispensing it, all relying in a sequence of execution from previous methods.
+
+The point to take away is that by knowing just how to use map and flatMap , we can abstract away the asynchronous nature of the problem and focus only on how our logic composes.
+---
+
+# Recap
+
+- We've seen an example with asynchronous computation ✅
+- Apart from `Optional` and `CompletableFuture` there are others in the Java ecosystem ⁉️ 
+- Our synchronous implementation is in a primitive form 😑
+
+1. Optional extinguishes the cause of error
+2. OptionalInt does not compose naturally with other optionals.
+3. We haven't talked about (side) effects yet.
+
+
+
+## External libraries to the rescue
+
+- Thankfully there are libraries that implement richer data structures for functional programming.
+- Let's look at one: io.vavr
+
+---
+## Vavr: Try
+
+```java
+public static Try<Integer> toInt(String text) {
+        return Try.of(() -> Integer.parseInt(text));
+ }
+ 
+ public static Try<ZonedDateTime> addDaysToNow(int days, ZonedDateTime now) {
+    return Try.of(() -> now.plusDays(days));
+ }
+ 
+ public Try<ZonedDateTime> serveUser(UserRequest userRequest) {
+    return toInt(userRequest.days)
+            .map(days -> new ValidatedUserInput(days, userRequest.now))
+            .flatMap(validatedInput -> addDaysToNow(validatedInput.days, validatedInput.now));
+ }
+```
+---
+## Vavr: Either
+```java
+public static Either<String, Integer> toInt(String text) {
+    return Try.of(() -> Integer.parseInt(text)) //Try<Integer>
+            .toEither() //Either<Throwable, Integer>
+            .mapLeft(
+                t -> "Expected an integer for days but found: " + text
+            ); //Either<String, Integer>
+    }
+    
+public static Either<String, ZonedDateTime> addDaysToNow(
+                int days, ZonedDateTime now) 
+{
+    return Try.of(() -> now.plusDays(days))
+            .toEither()
+            .mapLeft(t -> "Given " + days + " exceed the date range");
+}
+    
+public Either<String, ZonedDateTime> serveUser(UserRequest userRequest) {
+    return toInt(userRequest.days) //Either<String, Integer>
+            .map(
+                days -> new ValidatedUserInput(days, userRequest.now)
+            ) //Either<String, ValidatedUserInput>
+            .flatMap(
+                validatedInput -> addDaysToNow(
+                        validatedInput.days, validatedInput.now
+                    )//addDaysToNow
+            ); //Either<String, ZonedDateTime>
+    }
+```
+???
+If we don't care about storing the exception and we just want to say to the user , hey this input you gave us is invalid?
+
+We can use an Either. An Either is also polymorphic and has this signature Either<E, S> with E representing an error type in this case and S a success type.
+
+So while Try always carries a Throwable on failure we can make Either carry whatever we want.
+
+(An Either is also a BiFunctor because it accepts 2 different types and provides map and mapLeft to operate over a potentially present left type and a potentially present right type. Because it is a Functor map is not named mapRight as Functor needs to implement map. So map has a preference over the right value and an additional mapLeft method is provided)
+
+io.vavr has also a better optional data structure called Option.
+
+At this point learning to use Optional, Try and Either will be a good first step to exercise some FP practices.
+
+I mentioned that would be easier to test and to explain this consider if you want to add annotations or try catches to validate exceptions being thrown, or assert a value which can be an either, option or even a try.
+
+---
+
+# What about side effects?
+
+- We haven't done anything
+- No calls handled, no (now) has been generated
+
+???
+Now, all this is good. But we haven't done anything, no calls handled, no (now) has been generated. As we said we are not allowed to generate the now in a total function because that would make it return different outputs every time is called with the same argument values.
+
+How do we do this? We want to push the `now` generation as far as possible to the area of our code that does (side) effects.
+
+---
+
+# FP style dependency injection
+
+How do we solve the `.now` problem?
+
+1. We need a function that accepts days
+2. The function needs to give us the means of calculating the final value by also generating now.
+
+Let's model this with code.
+
+```java
+public Function<
+            Integer, 
+            Function<
+                Clock, 
+                Either<String, ZonedDateTime>
+            >
+         > serveUserFunction()
+```
+
+`A => B` is `Function<A, B>`
+
+- `Integer => Clock => Either<String, ZonedDateTime>`
+- `Integer => (Clock => Either<String, ZonedDateTime>)`
+
+- Usage: `f.apply(1).apply(Clock.systemUTC())`
+
+???
+In other words we need to wrap our function in a function that takes a dependency. This is a different - more functional style of dependency injection.
+
+Let's model this with code.
+...
+We accept an integer but we return a function that accepts clock and generates the result.
+
+Now, we can generate this clock at the very edge of our program and pass it to the area that handles the user input directly.
+
+We kind of went from (String, ZonedDateTime) => Optional<ZonedDateTime> to (String, Clock) => Optional<ZonedDateTime> and then to String => Clock => Optional<ZonedDateTime>
+
+The technique of translating (A, B) => C to A => B => C is called Currying
+
+---
+
+## Summary
+- We described our program as a function - a composition from other functions.
+- We haven't executed anything yet.
+- We are allowed to pass our function to a runtime (e.g. your test runner or your main method)
+
+```java
+public static void main(String[] args) {
+    Clock clock = Clock.systemUTC();
+    String days = args[0];
+    serveUserFunction().apply(days).apply(clock);
+}
+```
+
+???
+We described our program as a function. We haven't executed anything. We then pushed it to the runtime (e.g. you are allowed to execute this function in the main method of your program). Another benefit is that now all our side effect free code is easier to refactor because if we have a pure function, we can rely purely on the types and the transformation logic. How many times have you refactored something only to miss a side effect that must had happened?
+So in reality we have introduced 2 runtimes. One is your test runtime, where you can run JUnit tests. For production you need a different one, maybe a setup that can handle a concurrent/multithreaded setting.
+
+In my opinion, FP is not a tool to solve all your software issues. It is a tool though that gives you certain benefits, my personal favourites are that it makes it easier to test individual logic sections of your code and easier to refactor. It does have mathematical foundations which so far is the main tool for driving humanity's progress.
+
+I think this would be a good point to end . There is a lot more in FP but the main goal of this talk is to clear up some misconceptions and give an entrypoint to anyone that wans to explore FP further.
+---
+# Further reading
+- For Java https://www.vavr.io/ is a good way to start playing with this functional data structures. 
+- More theoretical background: free book https://bartoszmilewski.com/2014/10/28/category-theory-for-programmers-the-preface/ from Bartosz Milewski.
+
+- On how to validate contracts of interfaces (e.g. Monad, Functor) you can explore property checking https://www.vavr.io/vavr-docs/#_property_checking
+
+- If you'd like to explore a different language less verbose than Java, try Kotlin with some FP libraries or Scala. Outside the JVM you can try Haskell .
     </textarea>
     <script src="https://remarkjs.com/downloads/remark-latest.min.js">
     </script>
