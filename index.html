@@ -14,8 +14,8 @@
         font-weight: normal;
       }
       img {
-          width: 100%;
-          height: 100%
+          width: 80%;
+          height: 80%
       }
       .remark-code, .remark-inline-code { font-family: 'Ubuntu Mono'; }
     </style>
@@ -33,15 +33,11 @@ class: center, middle
 
 ## Unfamiliar language:
 
-1. Purity
-2. No side effects (how can anyone do anything?)
-3. Composition
-4. Different from OOP
-5. Monads!!!
-
-
-![mind_blown](https://user-images.githubusercontent.com/3875429/74665979-9252cc00-5198-11ea-8a36-88e471899d32.jpeg)
-![scared](https://user-images.githubusercontent.com/3875429/74665550-dbeee700-5197-11ea-8426-1cc1bfb9b876.jpeg)
+1. Purity 😨
+2. No side effects (how can anyone do anything?) 😵
+3. Composition 😬
+4. Different from OOP 😱
+5. Monads!!! 😰
 
 ???
 When someone is introduced to functional programming from a different paradigm things sound weird, complex or plain impossible.
@@ -93,10 +89,9 @@ A function is a transformation of something to something else. A function can tr
 Integer.parseInt is not a function because it yields no results for strings that cannot be parsed into a number, even worse it throws an exception.
 ---
 - The solution is to expand the output set to represent erroneous state but make the function always return a value.
-![fix_exception](https://user-images.githubusercontent.com/3875429/74458428-970a3e00-4e81-11ea-9b44-7e1178729919.jpg)
 
 ```java
-public static OptionalInt toInt(String text) {
+public OptionalInt toInt(String text) {    
     try {
         return OptionalInt.of(Integer.parseInt(text));
     } catch (NumberFormatException nfe) {
@@ -104,6 +99,9 @@ public static OptionalInt toInt(String text) {
     }
 }
 ```
+![fix_exception](https://user-images.githubusercontent.com/3875429/74458428-970a3e00-4e81-11ea-9b44-7e1178729919.jpg)
+
+
 ---
 # Illegal functions: inconsistent output
 
