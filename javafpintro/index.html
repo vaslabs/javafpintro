@@ -534,8 +534,12 @@ public Try<Integer> toInt(String text) {
  
  public Try<ZonedDateTime> serveUser(UserRequest userRequest) {
     return toInt(userRequest.days)
-            .map(days -> new ValidatedUserInput(days, userRequest.now))
-            .flatMap(validatedInput -> addDaysToNow(validatedInput.days, validatedInput.now));
+            .map(days -> 
+                new ValidatedUserInput(days, userRequest.now)
+            )//Try<ValidatedUserInput>
+            .flatMap(validatedInput -> 
+                addDaysToNow(validatedInput.days, validatedInput.now)
+            );//Try<ZonedDateTime>
  }
 ```
 ---
