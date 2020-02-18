@@ -183,6 +183,13 @@ public OptionalInt toInt(String text) {
 
 ## Code: Function composition
 ```java
+public Optional<ZonedDateTime> serveUser(UserRequest userRequest) {
+    Function<UserRequest, Optional<ValidatedUserInput>> parseInput = 
+        this::parseInput;
+    Function<UserRequest, Optional<ZonedDateTime>> serveFunction = 
+        parseInput.andThen(this::optionallyAddDaysToNow);
+    return serveFunction.apply(userRequest);
+}
 public Optional<ValidatedUserInput> parseInput(UserRequest userRequest) {
     OptionalInt days = toInt(userRequest.days);
     if (days.isPresent()) {
@@ -203,13 +210,6 @@ public Optional<ZonedDateTime> optionallyAddDaysToNow(
     } else {
         return Optional.empty();
     }
-}
-public Optional<ZonedDateTime> serveUser(UserRequest userRequest) {
-    Function<UserRequest, Optional<ValidatedUserInput>> parseInput = 
-        this::parseInput;
-    Function<UserRequest, Optional<ZonedDateTime>> serveFunction = 
-        parseInput.andThen(this::optionallyAddDaysToNow);
-    return serveFunction.apply(userRequest);
 }
 ```
 
