@@ -535,7 +535,7 @@ public Either<String, Integer> toInt(String text) {
             .mapLeft(
                 t -> "Expected an integer for days but found: " + text
             ); //Either<String, Integer>
-    }
+}
     
 public Either<String, ZonedDateTime> addDaysToNow(
                 int days, ZonedDateTime now) 
