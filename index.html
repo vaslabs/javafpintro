@@ -555,7 +555,7 @@ public Either<String, ZonedDateTime> serveUser(UserRequest userRequest) {
                         validatedInput.days, validatedInput.now
                     )//addDaysToNow
             ); //Either<String, ZonedDateTime>
-    }
+}
 ```
 ???
 If we don't care about storing the exception and we just want to say to the user , hey this input you gave us is invalid?
