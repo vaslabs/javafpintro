@@ -567,9 +567,10 @@ public Either<String, ZonedDateTime> serveUser(UserRequest userRequest) {
                 days -> new ValidatedUserInput(days, userRequest.now)
             ) //Either<String, ValidatedUserInput>
             .flatMap(
-                validatedInput -> addDaysToNow(
+                validatedInput -> 
+                    addDaysToNow(
                         validatedInput.days, validatedInput.now
-                    )//addDaysToNow
+                    )
             ); //Either<String, ZonedDateTime>
 }
 ```
