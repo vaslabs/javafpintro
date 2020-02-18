@@ -154,7 +154,8 @@ That means we need to parse a string into an int, add it to the current date and
 
 ## Model in FP terms
 ![funcion_composition](https://user-images.githubusercontent.com/3875429/74458422-95407a80-4e81-11ea-9aa6-2a4934dd1678.jpg)
-
+???
+Here's how we model it in fp terms
 ---
 
 ## Code: Value objects
@@ -212,13 +213,16 @@ public Optional<ZonedDateTime> optionallyAddDaysToNow(
     }
 }
 ```
+???
+...
+Is this how we compose functions? 
+The code looks very verbose and the if else is not very different from a try catch.
 
 ---
 
 ## Function composition so far
-Is this how we compose functions? The code looks very verbose and the if else is not very different from a try catch.
 
-But let's recap:
+Recap:
 
 1. 👍We have only pure functions so far. 
 2. 💪 We managed to compose 2 functions together with the Java core API.
@@ -229,19 +233,26 @@ But let's recap:
 ---
 
 ## Map values inside objects
+![optional_with_if](https://user-images.githubusercontent.com/3875429/74735773-4318a400-5249-11ea-9af9-8d403ef6a355.png)
 
-1. Suppose we have `B f(A a)`. All is good if for every value of type `A` we can generate a value in `B`.
-2. Otherwise we need to extend our output set, for example our function becomes `Option<B> f(A a)`.
 
-How do we transform a value in an Option?
+???
+## How do we transform a value in an Option?
 
 a. If `Option<A>` is empty then we give an empty `Option<B>`
 
 b. If `Option<A>` and `(1)` is true, then we give an `Option<B>` by applying `B f(A a)`
 
-We can have an interface for this right?
+Now, just like we did in the code, if `Optional<B>` is empty any function that operates over B is applied to it, needs to yield empty as well .
 
-Indeed Java provides in its Optional class a method called `map`. However, not in `OptionalInt`.
+So if that is true we may come up with an interface to support this. This interface exists in Java Optional but not in OptionalInt.
+---
+![optional_with_map](https://user-images.githubusercontent.com/3875429/74736684-3006d380-524b-11ea-8945-533a73baf5af.png)
+
+???
+Indeed Java provides in its Optional class a method called map. 
+However, not in OptionalInt.
+
 ---
 
 ## Optional: apply functions.
@@ -290,7 +301,7 @@ What are these?
 
 - `box.map((T1)t -> (U)u)` ❌
 - `box.map((T)t -> (SuperU)u)` ❌
-- `box.map((SuperT)t 0-> (U)u)` ✅
+- `box.map((SuperT)t -> (U)u)` ✅
 - `box.map((T)t -> (U)u)` ✅
 - `box.map((T)t -> (U1)u)` ✅
 
@@ -336,7 +347,7 @@ Problem:
     );
 ```
 
-Gives an `Optional<Optional<ZonedDateTime>`
+Gives an `Optional<Optional<ZonedDateTime>>`
 
 ---
 
