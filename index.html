@@ -52,10 +52,10 @@ I'm going to attempt to demystify FP and hopefully show you that behind this com
 ---
 
 # Motivation: But what is good code?
-All code has disadvantages. A better code is:
+All code has disadvantages. A better code is one that:
 
 - Changing it doesn't cause fear
-- Easy to test
+- Is easy to test
 
 ???
 We can almost all agree that all code is bad. In my personal experience and by working with teams, a better code, is a code that you are not afraid to change. 
@@ -108,7 +108,7 @@ public OptionalInt toInt(String text) {
 Let's say we have a function that adds N days to the current time. Is this a function?
 
 ```java
-public static ZonedDateTime addDaysToNow(int days) {
+public ZonedDateTime addDaysToNow(int days) {
     return ZonedDateTime.now().plusDays(days);
 }
  ```
@@ -132,8 +132,8 @@ We need to delicate the decision of what now is to someone else. How is this use
 ## Comparison
 | Function    | Test   |
 | ------------- |:-------------:| 
-| `public ZonedDateTime addDaysToNow(int days)` | `assert ???` |
-| `public ZonedDateTime addDaysToNow(int days, ZonedDateTime now)`|  `assert a value` |
+| `public ZonedDateTime addDaysToNow(int days)` | 🤔 |
+| `public ZonedDateTime addDaysToNow(int days, ZonedDateTime now)`|  🤗 |
 
 ???
 Imagine if you had the first implementation, how would your test look like?
@@ -170,7 +170,7 @@ final class ValidatedUserInput {
 ```
 and the function we wrote before
 ```java
-public static OptionalInt toInt(String text) {
+public OptionalInt toInt(String text) {
     try {
         return OptionalInt.of(Integer.parseInt(text));
     } catch (NumberFormatException nfe) {
@@ -314,7 +314,7 @@ Problem:
 ### Fix proposal
 
 ```java
-public static Optional<ZonedDateTime> addDaysToNow(
+public Optional<ZonedDateTime> addDaysToNow(
             int days, ZonedDateTime now) 
 {
     try {
@@ -512,11 +512,11 @@ The point to take away is that by knowing just how to use map and flatMap , we c
 ## Vavr: Try
 
 ```java
-public static Try<Integer> toInt(String text) {
+public Try<Integer> toInt(String text) {
         return Try.of(() -> Integer.parseInt(text));
  }
  
- public static Try<ZonedDateTime> addDaysToNow(int days, ZonedDateTime now) {
+ public Try<ZonedDateTime> addDaysToNow(int days, ZonedDateTime now) {
     return Try.of(() -> now.plusDays(days));
  }
  
@@ -529,7 +529,7 @@ public static Try<Integer> toInt(String text) {
 ---
 ## Vavr: Either
 ```java
-public static Either<String, Integer> toInt(String text) {
+public Either<String, Integer> toInt(String text) {
     return Try.of(() -> Integer.parseInt(text)) //Try<Integer>
             .toEither() //Either<Throwable, Integer>
             .mapLeft(
@@ -537,7 +537,7 @@ public static Either<String, Integer> toInt(String text) {
             ); //Either<String, Integer>
     }
     
-public static Either<String, ZonedDateTime> addDaysToNow(
+public Either<String, ZonedDateTime> addDaysToNow(
                 int days, ZonedDateTime now) 
 {
     return Try.of(() -> now.plusDays(days))
