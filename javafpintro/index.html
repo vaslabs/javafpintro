@@ -161,7 +161,7 @@ Here's how we model it in fp terms
 ## Code: Value objects
 ```java
 final class UserRequest {
-    final String days;
+   final String days;
    final  ZonedDateTime now;
 }
  
@@ -305,7 +305,7 @@ What are these?
 - `box.map((T)t -> (U)u)` ✅
 - `box.map((T)t -> (U1)u)` ✅
 
-Where T1 is subclass of T and U1 is sublass of U
+Where T1 is subclass of T and U1 is subclass of U
 
 - `? super T`: Contravariance
 - `? extends U`: Covariance
