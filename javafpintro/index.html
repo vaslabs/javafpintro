@@ -286,7 +286,7 @@ public Optional<ZonedDateTime> optionallyAddDaysToNow(
 - There are a lot of Boxes similar in behaviour or concept to optional.
 - They have something in common, that you may apply a function to a boxed value if some pre-requisites are met.
 
-The signature of the method is
+The signature of the method for any `Box<T>` is
 
 ```java
 public<U> Box<U> map(Function<? super T, ? extends U> mapper)
@@ -476,11 +476,13 @@ interface IceCreamMachine {
     CompletionStage<Flavour> grabFlavour();  
     
     default CompletionStage<IceCream> makeIceCream() {  
-          return pickCone().thenCompose(cone ->  //flatMap
-                grabFlavour()
-                .thenApply( //map
-                    flavour -> new IceCream(cone, flavour)
-                )//thenApply  
+          return pickCone()
+                .thenCompose(//flatMap
+                    cone ->  
+                        grabFlavour()
+                        .thenApply(flavour ->  //map
+                            new IceCream(cone, flavour)
+                        )//thenApply  
           );//thenCompose  
      }  
     
