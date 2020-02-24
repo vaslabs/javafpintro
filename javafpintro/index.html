@@ -374,7 +374,7 @@ public<U> Box<U> flatMap(Function<? super T, Box<U>> mapper)
 ???
 flatMap is part of another interface called Monad . A Monad interface also extends Functor . So a Monad has both a map and a flatMap. Whenever you hear "this is a monad" then most of the time you are safe to picture a data structure that has map and flatMap implemented.
 
-Notice that here the super (contravariance) is present, but the extends is missing. So you cannot pass a function that gives anything other than a `Box<U>`, even if the parametarised type is a subclass of U or superclass. so you can't pass to flatMap a Function<T, Box<U1>> where U1 is a subclass of U.
+Notice that here the super (contravariance) is present, but the extends is missing. So you cannot pass a function that gives anything other than a `Box<U>`, even if the parametarised type is a subclass of U or superclass. so you can't pass to flatMap a `Function<T, Box<U1>>` where U1 is a subclass of U.
 
 That kind of relationship between types is called invariance (as opposed to contravariance and covariance).
 
