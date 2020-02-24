@@ -392,19 +392,12 @@ Why do we have Functors and Monads and what is the difference? They are entities
 - Functor composes in the sense that 
 `F.map(f).map(g) == F.map(f andThen g)`
 - You can't construct a Functor but you can construct a Monad with a
-`pure` constructor and a constructor that decides the 
-state of the Box based on the value passed.
+`pure` or unit constructor
 
-Some implementations call the latter `apply` or `ap` (a what?).
-
-To understand the difference consider the `Optional::of` (`pure`) and the
-`Optional::ofNullable` (`apply`)
+Optional has `Optional::of` and `Optional::ofNullable` as the unit constructors.
 
 ???
 In Java Optional this would be the of method. 
-There is another contract which is another constructor method (sometimes referred to as apply or ap).
-This will not result necessarily in a box with a value. 
-An example is the ofNullable from Optional.
 
 ---
 
@@ -443,11 +436,11 @@ The same stands for Monad or Functor. The names are friendlier in java land (e.g
 #### A Monad?
 - `thenCompose` ➡️ `flatMap`
 - `thenApply` ➡️ `map`
-- `CompletableFuture.completedFuture(value)` ➡️ `pure`
-- `CompletableFuture.supplyAsync(() -> result)` or `CompletableFuture.supplyAsync(() -> result, executor)` ➡️ `apply`
+- `CompletableFuture.completedFuture(value)` or `CompletableFuture.supplyAsync(() -> result)` ➡️ `pure` or `unit` constructors
 
 ???
-Talking about CompletionStage: The interface is inspired from Monads and the `CompletableFuture` implementation is a Monad itself, it's just using different names. `map` is `thenApply` `flatMap` is `thenCompose` pure constructor is `CompletableFuture.completedFuture(value)` apply is `CompletableFuture.supplyAsync(() -> result)` or `CompletableFuture.supplyAsync(() -> result, executor)`
+Talking about CompletionStage: The interface is inspired from Monads and the `CompletableFuture` implementation is a Monad itself, it's just using different names. `map` is `thenApply` `flatMap` is `thenCompose` pure constructor is `CompletableFuture.completedFuture(value)`
+apply is `CompletableFuture.supplyAsync(() -> result)` or `CompletableFuture.supplyAsync(() -> result, executor)`
 
 ## Asynchronous programming: example
 
