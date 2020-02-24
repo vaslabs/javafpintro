@@ -442,6 +442,8 @@ The same stands for Monad or Functor. The names are friendlier in java land (e.g
 Talking about CompletionStage: The interface is inspired from Monads and the `CompletableFuture` implementation is a Monad itself, it's just using different names. `map` is `thenApply` `flatMap` is `thenCompose` pure constructor is `CompletableFuture.completedFuture(value)`
 apply is `CompletableFuture.supplyAsync(() -> result)` or `CompletableFuture.supplyAsync(() -> result, executor)`
 
+---
+
 ## Asynchronous programming: example
 
 We have an ice cream dispenser machine. These are the things it can recognise
