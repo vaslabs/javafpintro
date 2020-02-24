@@ -570,7 +570,7 @@ public Either<String, ZonedDateTime> serveUser(UserRequest userRequest) {
 ???
 If we don't care about storing the exception and we just want to say to the user , hey this input you gave us is invalid?
 
-We can use an Either. An Either is also polymorphic and has this signature Either<E, S> with E representing an error type in this case and S a success type.
+We can use an Either. An Either is also polymorphic and has this signature `Either<E, S>` with E representing an error type in this case and S a success type.
 
 So while Try always carries a Throwable on failure we can make Either carry whatever we want.
 
