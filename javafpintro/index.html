@@ -58,17 +58,6 @@ How can you have no side effects and yet make your program do something? What do
 => It seems that there is a communication barrier between functional programmers and the rest . This barrier could discourage people from trying out new paradigms (any new paradigm)
 
 I'm going to attempt to demystify FP and hopefully show you that behind this complex language there are some basic fundamentals. Then we can see how we can write better code but first let's define what is better code?
----
-
-# Motivation: But what is good code?
-All code has disadvantages. A better code is one that:
-
-- Changing it doesn't cause fear
-- Is easy to test
-
-???
-We can almost all agree that all code is bad. In my personal experience and by working with teams, a better code, is a code that you are not afraid to change. 
-And that is mainly because that code is easy to test and such tests are also easy to maintain => tests are also code... The more complex they become the more probable it is that they are incorrect and become irrelevant faster (how many times have you added @Ignore ?).
 
 ---
 
@@ -265,6 +254,7 @@ However, not in OptionalInt.
 
 We use map to apply the function `ZonedDateTime f(VailidateUserInput vui)` 
 to `Optional<ValidateUserInput>`
+
 ```java
 public Optional<ZonedDateTime> serveUser(UserRequest userRequest) {
     return parseInput(userRequest).map(validatedUserInput ->
@@ -273,18 +263,6 @@ public Optional<ZonedDateTime> serveUser(UserRequest userRequest) {
 }
 ```
 
-The code below is not needed anymore
-```java
-public Optional<ZonedDateTime> optionallyAddDaysToNow(
-        Optional<ValidatedUserInput> validatedUserInputOpt) {
-    return validatedUserInputOpt.map(
-            validatedUserInput ->
-                    addDaysToNow(
-                            validatedUserInput.days,
-                            validatedUserInput.now)
-    );
-}
-```
 ---
 ## What is map?
 
@@ -297,25 +275,6 @@ The signature of the method for any `Box<T>` is
 ```java
 public<U> Box<U> map(Function<? super T, ? extends U> mapper)
 ```
-What are these? 
-
-`? super T, ? extends U`
-
----
-
-## Type relationships
-
-- `box.map((T1)t -> (U)u)` ❌
-- `box.map((T)t -> (SuperU)u)` ❌
-- `box.map((SuperT)t -> (U)u)` ✅
-- `box.map((T)t -> (U)u)` ✅
-- `box.map((T)t -> (U1)u)` ✅
-
-Where T1 is subclass of T and U1 is subclass of U
-
-- `? super T`: Contravariance
-- `? extends U`: Covariance
-
 ---
 
 ## Compose Optionals together
