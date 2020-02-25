@@ -580,10 +580,10 @@ public Function<
             >
          > serveUserFunction() {
     return days -> //String 
-        zonedDateTime -> //ZonedDateTime
-            serveUser(
-                new UserRequest(days, zonedDateTime)
-            ); //Either<String, ZonedDateTime>
+                zonedDateTime -> //ZonedDateTime
+                    serveUser(
+                        new UserRequest(days, zonedDateTime)
+                    ); //Either<String, ZonedDateTime>
 }
          
 ```
