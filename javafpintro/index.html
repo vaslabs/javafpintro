@@ -573,23 +573,24 @@ How do we solve the `.now` problem?
 
 ```java
 public Function<
-            Integer, 
+            String, 
             Function<
                 ZonedDateTime, 
                 Either<String, ZonedDateTime>
             >
-         > serveUserFunction()
+         > serveUserFunction() {
+    return days -> //String 
+        zonedDateTime -> //ZonedDateTime
+            serveUser(
+                new UserRequest(days, zonedDateTime)
+            ); //Either<String, ZonedDateTime>
+}
+         
 ```
 `A => B` is `Function<A, B>`
-1. `(Integer, ZonedDateTime) => ZonedDateTime`
-3. `Integer => ZonedDateTime => Either<String, ZonedDateTime>`
-4. `Integer => (ZonedDateTime => Either<String, ZonedDateTime>)`
-
-Usage: 
-```java
-f.apply( 1 )
- .apply( ZonedDateTime.now( Clock.systemUTC() ) )
-```
+1. `(String, ZonedDateTime) => ZonedDateTime`
+3. `String => ZonedDateTime => Either<String, ZonedDateTime>`
+4. `String => (ZonedDateTime => Either<String, ZonedDateTime>)`
 
 ???
 
