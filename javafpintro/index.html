@@ -472,33 +472,35 @@ We can express its behaviour by composing CompletionStage instances
 ```java
 interface IceCreamMachine {  
   
+    default CompletionStage<PayedIceCream> dispenseIceCream() {  
+        
+        return receivePayment()
+            .thenCompose( payment -> //flatMap
+                makeIceCream()  
+                    .thenApply(  iceCream -> //map
+                        new PayedIceCream(payment, iceCream)  
+                    )//thenApply
+            );//thenCompose
+
+    }  
+
+    default CompletionStage<IceCream> makeIceCream() {  
+        
+        return pickCone()
+            .thenCompose(cone -> //flatMap
+                grabFlavour()
+                    .thenApply(flavour ->  //map
+                        new IceCream(cone, flavour)
+                    )//thenApply  
+            );//thenCompose  
+    }  
+
     CompletionStage<Cone> pickCone(); 
     CompletionStage<Flavour> grabFlavour();  
+    CompletionStage<Payment> receivePayment();  
     
-    default CompletionStage<IceCream> makeIceCream() {  
-          return pickCone()
-                .thenCompose(//flatMap
-                    cone ->  
-                        grabFlavour()
-                        .thenApply(flavour ->  //map
-                            new IceCream(cone, flavour)
-                        )//thenApply  
-          );//thenCompose  
-     }  
     
-     CompletionStage<Payment> receivePayment();  
-    
-     default CompletionStage<PayedIceCream> dispenseIceCream() {  
-          return makeIceCream()  
-                    .thenCompose(  
-                        iceCream -> receivePayment().thenApply(  
-                                payment -> 
-                                new PayedIceCream(payment, iceCream)  
-                        )//thenApply
-                    );//thenCompose
-    }  
-    
-  }
+}
 ```
 ???
 There are 3 unimplemented methods which may describe how we do each task. All of them are modelled as asynchronous computations. From those we can provide 2 default implementations for making an ice cream and dispensing it, all relying in a sequence of execution from previous methods.
