@@ -75,21 +75,22 @@ A function is a transformation of something to something else. A function can tr
 ---
 
 # Illegal functions: partial functions
-- `Integer::parseInt`
+- `s => BigInt(s)`
+
 
 ![no_function_exception](https://user-images.githubusercontent.com/3875429/74458429-970a3e00-4e81-11ea-9215-158c4afaa3e8.jpg)
 
 ???
-Integer.parseInt is not a function because it yields no results for strings that cannot be parsed into a number, even worse it throws an exception.
+`s => BigInt(s)` is not a function because it yields no results for strings that cannot be parsed into a big int, even worse it throws an exception.
 ---
 - The solution is to expand the output set to represent erroneous state but make the function always return a value.
 
-```java
-public OptionalInt toInt(String text) {    
+```javascript
+(text) => {    
     try {
-        return OptionalInt.of(Integer.parseInt(text));
-    } catch (NumberFormatException nfe) {
-        return OptionalInt.empty();
+        return Maybe.just(BigInt(text))
+    } catch (error) {
+        return Maybe.empty()
     }
 }
 ```
@@ -101,10 +102,8 @@ public OptionalInt toInt(String text) {
 
 Let's say we have a function that adds N days to the current time. Is this a function?
 
-```java
-public ZonedDateTime addDaysToNow(int days) {
-    return ZonedDateTime.now().plusDays(days);
-}
+```javascript
+days => new Date(a.setDate(a.getDate() + days))
  ```
 ![inconsistent_function](https://user-images.githubusercontent.com/3875429/74458426-9671a780-4e81-11ea-9840-5e5d483e748b.jpg)
 
@@ -114,10 +113,8 @@ public ZonedDateTime addDaysToNow(int days) {
 
 How do we fix this issue?
 
-```java
-public ZonedDateTime addDaysToNow(int days, ZonedDateTime now) {
-    return now.plusDays(days);
-}
+```javascript
+(days, now) => new Date(now.getDate() + days)
 ```
 
 ???
@@ -126,8 +123,8 @@ We need to delicate the decision of what now is to someone else. How is this use
 ## Comparison
 | Function    | Test   |
 | ------------- |:-------------:| 
-| `public ZonedDateTime addDaysToNow(int days)` | 🤔 |
-| `public ZonedDateTime addDaysToNow(int days, ZonedDateTime now)`|  🤗 |
+| `(days) => ...` | 🤔 |
+| `(days, now) => ...`|  🤗 |
 
 ???
 Imagine if you had the first implementation, how would your test look like?
@@ -153,57 +150,56 @@ Here's how we model it in fp terms
 ---
 
 ## Code: Value objects
-```java
-final class UserRequest {
-   final String days;
-   final ZonedDateTime now;
+```typescript
+class UserRequest {
+   days: string;
+   now: Date;
 }
  
-final class ValidatedUserInput {
-    final int days;
-    final ZonedDateTime now;
+class ValidatedUserInput {
+    days: BigInt;
+    now: Date;
 }
 ```
 and the function we wrote before
-```java
-public OptionalInt toInt(String text) {
+```javascript
+const toBigInt = (text) => {
     try {
-        return OptionalInt.of(Integer.parseInt(text));
-    } catch (NumberFormatException nfe) {
-        return OptionalInt.empty();
+        return Maybe.just(BigInt(text));
+    } catch (err) {
+        return Maybe.empty();
     }
 }
 ```
 ---
 
 ## Code: Function composition
-```java
-public Optional<ZonedDateTime> serveUser(UserRequest userRequest) {
-    Function<UserRequest, Optional<ValidatedUserInput>> parseInput = 
-        this::parseInput;
-    Function<UserRequest, Optional<ZonedDateTime>> serveFunction = 
-        parseInput.andThen(this::optionallyAddDaysToNow);
-    return serveFunction.apply(userRequest);
+```typescript
+const serveUser = (userRequest: UserRequest) => {
+    const serveFunction = (userRequest: UserRequest)  => 
+        optionallyAddDaysToNow(parseInput(userRequest)); 
+    return serveFunction(userRequest);
 }
-public Optional<ValidatedUserInput> parseInput(UserRequest userRequest) {
-    OptionalInt days = toInt(userRequest.days);
-    if (days.isPresent()) {
-        return Optional.of(
-            new ValidatedUserInput(days.getAsInt(), userRequest.now)
+const parseInput = (userRequest: UserRequest) {
+    const days: Maybe<BigInt> = toBigInt(userRequest.days);
+    if (days.isDefined()) {
+        return Maybe.just(
+            new ValidatedUserInput(days.get(), userRequest.now)
         );
     } else {
-        return Optional.empty();
+        return Maybe.empty();
     }
 }
-public Optional<ZonedDateTime> optionallyAddDaysToNow(
-                Optional<ValidatedUserInput> validatedUserInputOpt) {
-    if (validatedUserInputOpt.isPresent()) {
-        ValidatedUserInput validatedUserInput = validatedUserInputOpt.get();
-        return Optional.of(addDaysToNow(
-            validatedUserInput.days, validatedUserInput.now)
+const optionallyAddDaysToNow = (validatedUserInputOpt: Maybe<ValidatedUserInput>) 
+{
+    if (validatedUserInputOpt.isDefined()) {
+        validatedUserInput: Maybe<ValidatedUserInput> = 
+            validatedUserInputOpt.get();
+        return Maybe.just(
+            addDaysToNow(validatedUserInput.days, validatedUserInput.now)
         );
     } else {
-        return Optional.empty();
+        return Maybe.empty();
     }
 }
 ```
@@ -247,14 +243,15 @@ However, not in OptionalInt.
 
 ## Optional: apply functions.
 
-We use map to apply the function `ZonedDateTime f(VailidateUserInput vui)` 
-to `Optional<ValidateUserInput>`
+We use map to apply the function `(v: ValidateUserInput) => Date` 
+to `Maybe<ValidateUserInput>`
 
-```java
-public Optional<ZonedDateTime> serveUser(UserRequest userRequest) {
-    return parseInput(userRequest).map(validatedUserInput ->
+```typescript
+const serveUser = (userRequest: UserRequest) => {
+    parseInput(userRequest).map(
+        validatedUserInput ->
             addDaysToNow(validatedUserInput.days, validatedUserInput.now)
-    );
+    )
 }
 ```
 
@@ -267,8 +264,8 @@ public Optional<ZonedDateTime> serveUser(UserRequest userRequest) {
 
 The signature of the method for any `Box<T>` is
 
-```java
-public<U> Box<U> map(Function<? super T, ? extends U> mapper)
+```typescript
+function map<U>(f: SuperT => SubU)
 ```
 ---
 
@@ -276,29 +273,28 @@ public<U> Box<U> map(Function<? super T, ? extends U> mapper)
 
 Problem:
 
-`long` primitive in `ZonedDateTime` can also run out of range.
+`Date` can also run out of range and produce an `InvalidDate`.
 
-- not every combination of `(int, ZonedDateTime)` can yield a result. 
-- `plusDays` can throw a `DateTimeException`
+- not every combination of `(BigInt, Date)` can yield a Date.
+- adding days can produce an InvalidDate value (not an exception)
 
 ---
 
-### Fix proposal
+### Use Maybe instead
 
-```java
-public Optional<ZonedDateTime> addDaysToNow(
-            int days, ZonedDateTime now) 
+```typescript
+addDaysToNowMaybe(days: number, now: Date) => 
 {
-    try {
-        return Optional.of(now.plusDays(days));
-    } catch (DateTimeException dte) {
-        return Optional.empty();
-    }
+    const datePlusDays = addDaysToNow(days, now)
+    if (datePlusDays.getDate())
+        return Maybe.just(datePlusDays)
+    else
+        return Maybe.empty()
 }
 ```
 
 Problem:
-```java
+```typescript
     parseInput(userRequest).map(validatedUserInput ->
         addDaysToNow(
             validatedUserInput.days, 
@@ -307,18 +303,18 @@ Problem:
     );
 ```
 
-Gives an `Optional<Optional<ZonedDateTime>>`
+Gives a `Maybe<Maybe<Date>>`
 
 ---
 
-## Flatten nested `Optional`
+## Flatten nested `Maybe`
 
-There is another helpful API method in optional that allows us
-to compose optionals together: `flatMap`
+There is another helpful API method in Maybe that allows us
+to compose maybes together: `flatMap`
 ```java
-public Optional<ZonedDateTime> serveUser(UserRequest userRequest) {
+const serveUser = (userRequest: UserRequest) => {
     return parseInput(userRequest).flatMap(
-        validatedUserInput ->
+        validatedUserInput =>
             addDaysToNow(
                 validatedUserInput.days, 
                 validatedUserInput.now
@@ -333,7 +329,7 @@ public Optional<ZonedDateTime> serveUser(UserRequest userRequest) {
 - It allows us to call a function that returns the same Box as the one we
 are applying to.
 ```java
-public<U> Box<U> flatMap(Function<? super T, Box<U>> mapper)
+function flatMap<U>(f: SuperT => Box<U>)
 ```
 ???
 flatMap is part of another interface called Monad . A Monad interface also extends Functor . So a Monad has both a map and a flatMap. Whenever you hear "this is a monad" then most of the time you are safe to picture a data structure that has map and flatMap implemented.
@@ -354,16 +350,17 @@ Why do we have Functors and Monads and what is the difference? They are entities
 - You can't construct a Functor but you can construct a Monad with a
 `pure` or unit constructor
 
-Optional has `Optional::of` and `Optional::ofNullable` as the unit constructors.
-
+E.g. Maybe.just
 ???
 In Java Optional this would be the of method. 
 
 ---
 
-## What?
+## Asynchronous programming?
 
-These concepts are no stranger in Java land . Let's see an example.
+- The javascript promise is neither a Functor nor a Monad because it violates the functor composition law.
+- Explanation: [https://stackoverflow.com/a/50173415](https://stackoverflow.com/a/50173415)
+- Lets switch to Java
 
 ```java
 /**
@@ -630,6 +627,7 @@ In my opinion, FP is not a tool to solve all your software issues. It is a tool 
 I think this would be a good point to end . There is a lot more in FP but the main goal of this talk is to clear up some misconceptions and give an entrypoint to anyone that wans to explore FP further.
 ---
 # Further reading
+- For javascript/typescript: https://ramdajs.com/
 - For Java https://www.vavr.io/ is a good way to start playing with this functional data structures. 
 - More theoretical background: free book https://bartoszmilewski.com/2014/10/28/category-theory-for-programmers-the-preface/ from Bartosz Milewski.
 
